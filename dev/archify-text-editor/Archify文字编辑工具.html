@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archify 文字编辑工具</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%232563eb'/%3E%3Crect x='6' y='6' width='5' height='5' rx='1' fill='white'/%3E%3Crect x='13' y='6' width='5' height='5' rx='1' fill='white'/%3E%3Crect x='6' y='13' width='5' height='5' rx='1' fill='white'/%3E%3Crect x='13' y='13' width='5' height='5' rx='1' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#fff; --line:#e3e6ea;
+    --ink:#1c2330; --muted:#6b7480; --accent:#2563eb; --accent-ink:#fff;
+    --warn:#b45309; --ok:#15803d; --danger:#b91c1c; --chip:#eef2f7;
+    --shadow:0 1px 2px rgba(20,25,40,.06),0 8px 24px rgba(20,25,40,.08);
+    --stage:#eef0f3; --host:#fff; --empty-big:#c3c9d1; --empty-sub:#8a93a0;
+    --sel:#cfe0ff; --item-active:#e2e9fb; --toast-bg:#1c2330; --toast-ink:#fff;
+    --frame-fill:rgba(80,120,200,.05); --frame-stroke:#94a3c8; --edge:#8a94a6;
+    --node-fill:#f4f7ff; --node-ink:#16203a; --node-sub:#4a5a7a; --node-tag:#8794ab;
+    --footer-border:#e3e6ea; --footer-ink:#8a93a0;
+  }
+  /* 暗色主题（archify 风格双色） */
+  html[data-theme="dark"]{
+    --bg:#0d1117; --panel:#151b23; --line:#2a3441;
+    --ink:#e6edf3; --muted:#8b98a9; --accent:#3b82f6; --accent-ink:#fff;
+    --warn:#f59e0b; --ok:#34d399; --danger:#f87171; --chip:#1f2937;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.4);
+    --stage:#0b0f14; --host:#151b23; --empty-big:#3d4b5c; --empty-sub:#6b7a8d;
+    --sel:#23344a; --item-active:#1d3048; --toast-bg:#0b0f14; --toast-ink:#e6edf3;
+    --frame-fill:rgba(59,130,246,.08); --frame-stroke:#4b5a72; --edge:#55637a;
+    --node-fill:#1a2433; --node-ink:#e6edf3; --node-sub:#9fb0c3; --node-tag:#76879b;
+    --footer-border:#2a3441; --footer-ink:#6b7a8d;
+  }
+  *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);}
+  body{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+  header{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);
+    border-bottom:1px solid var(--line);flex-wrap:wrap;z-index:5;}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;}
+  .brand svg{width:20px;height:20px;}
+  .spacer{flex:1;}
+  .btn{border:1px solid var(--line);background:var(--panel);padding:7px 13px;border-radius:8px;font-size:13px;
+    cursor:pointer;color:var(--ink);transition:background .12s,border-color .12s;}
+  .btn:hover{border-color:var(--accent);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn svg{width:14px;height:14px;vertical-align:-2px;margin-right:4px;}
+  .file-input{display:none;}
+  #statusbar{display:none;align-items:center;gap:10px;padding:6px 16px;background:var(--chip);
+    border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);}
+  #statusbar.show{display:flex;}
+  #statusbar .fname{font-weight:600;color:var(--ink);max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #dirtyFlag{color:var(--warn);font-weight:600;}
+  .body{flex:1;display:flex;min-height:0;}
+  .stage{flex:1;position:relative;overflow:auto;background:var(--stage);display:flex;align-items:flex-start;justify-content:center;}
+  .canvas-wrap{position:relative;padding:24px;max-width:100%;}
+  #viewerHost{background:var(--host);box-shadow:var(--shadow);max-width:100%;}
+  #viewerHost svg{display:block;max-width:100%;height:auto;min-width:0;}
+  .empty{margin:auto;text-align:center;color:var(--muted);max-width:460px;padding:40px;}
+  .empty .big{font-size:52px;line-height:1;margin-bottom:8px;color:var(--empty-big);}
+  .empty h2{font-size:17px;margin:0 0 6px;color:var(--ink);}
+  .empty p{font-size:13px;line-height:1.7;margin:0 0 8px;text-align:left;}
+  .empty .sub{font-size:12px;color:var(--empty-sub);line-height:1.6;text-align:left;margin-bottom:18px;}
+  .empty .actions{display:flex;gap:10px;justify-content:center;}
+  .edit-pop{position:absolute;width:300px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);z-index:30;padding:12px;font-size:13px;}
+  .edit-pop h4{margin:0 0 4px;font-size:12px;color:var(--muted);font-weight:600;}
+  .edit-pop .row{margin:0 0 8px;}
+  .edit-pop label{display:block;font-size:11px;color:var(--muted);margin:6px 0 3px;}
+  .edit-pop input,.edit-pop textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;color:var(--ink);}
+  .edit-pop textarea{min-height:52px;resize:vertical;font-family:inherit;}
+  .edit-pop .bar{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+  .edit-pop .obj-id{display:inline-block;font-size:11px;color:var(--muted);background:var(--chip);padding:1px 6px;border-radius:4px;margin-bottom:6px;}
+  .edit-pop .items-area{display:flex;flex-direction:column;gap:4px;}
+  .edit-pop .items-area .it-row{display:flex;gap:4px;}
+  .edit-pop .items-area input{flex:1;}
+  .edit-pop .items-area .del{flex:none;width:26px;border:1px solid var(--line);background:var(--panel);border-radius:6px;cursor:pointer;}
+  .sidebar{width:270px;min-width:270px;background:var(--panel);border-left:1px solid var(--line);
+    display:none;flex-direction:column;overflow:hidden;}
+  .sidebar.open{display:flex;}
+  .sidebar .head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+  .sidebar .head h3{margin:0;font-size:14px;}
+  .sidebar .search{padding:10px 14px;border-bottom:1px solid var(--line);}
+  .sidebar .search input{width:100%;padding:6px 9px;border:1px solid var(--line);border-radius:6px;font-size:12px;}
+  .sidebar .list{flex:1;overflow:auto;padding:6px 0;}
+  .sidebar .group-title{padding:8px 14px 4px;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.3px;}
+  .sidebar .item{display:flex;gap:8px;align-items:center;padding:6px 14px;cursor:pointer;font-size:13px;}
+  .sidebar .item:hover{background:var(--chip);}
+  .sidebar .item.active{background:var(--item-active);}
+  .sidebar .item .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar .item .sub{font-size:11px;color:var(--muted);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar .item .dirty{width:7px;height:7px;border-radius:50%;background:var(--warn);flex:none;}
+  .sidebar .foot{padding:8px 14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--toast-bg);color:var(--toast-ink);
+    padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .18s;z-index:60;}
+  #toast.show{opacity:.95;}
+  ::selection{background:var(--sel);}
+
+  /* 主题切换按钮 */
+  #themeBtn svg{width:16px;height:16px;vertical-align:-3px;margin:0;}
+  #themeBtn .sun{display:none;}
+  html[data-theme="dark"] #themeBtn .moon{display:none;}
+  html[data-theme="dark"] #themeBtn .sun{display:block;}
+
+  /* 底部版权条 */
+  footer{padding:7px 16px;border-top:1px solid var(--footer-border);background:var(--panel);
+    font-size:11px;color:var(--footer-ink);text-align:center;letter-spacing:.3px;flex:none;}
+  footer .dot{color:var(--accent);}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      <path d="M10 6.5h2a2 2 0 0 1 2 2v2M6.5 10v2a2 2 0 0 0 2 2h2M10 17.5h2a2 2 0 0 1 2-2v-2"/>
+    </svg>
+    Archify 文字编辑工具
+  </div>
+  <button class="btn" id="openJsonBtn">导入 JSON 数据</button>
+  <button class="btn" id="openFolderBtn">导入文件夹</button>
+  <input type="file" id="fileInput" class="file-input" accept=".json,.html,.htm">
+  <div class="spacer"></div>
+  <button class="btn" id="saveJsonBtn" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>
+    保存回写 candidate.json
+  </button>
+  <button class="btn" id="saveHtmlBtn" disabled>同步回写 HTML</button>
+  <button class="btn" id="toggleSidebar">文字列表</button>
+  <button class="btn" id="themeBtn" title="切换亮/暗主题">
+    <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+    <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  </button>
+</header>
+
+<div id="statusbar">
+  <span>数据源：</span><span class="fname" id="statJson">—</span>
+  <span>· 画布：</span><span class="fname" id="statHtml">—</span>
+  <span>· 已修改 <span id="statModified">0</span></span>
+  <span id="dirtyFlag"></span>
+</div>
+
+<div class="body">
+  <div class="stage" id="stage">
+    <div class="empty" id="empty">
+      <div class="big">⌗</div>
+      <h2>在 Archify 架构图上直接改文字</h2>
+      <p><b>数据源</b>是 archify 的 <code>candidate.json</code>（IR），HTML 是它编译出的成品，两者文字一一对应：</p>
+      <div class="sub">
+        · 组件节点文字 label / sublabel / tag<br>
+        · 连线文字 connections.label<br>
+        · 区域文字 boundaries.label<br>
+        · 卡片文字 cards.title / items
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="emptyJson">导入 candidate.json</button>
+        <button class="btn" id="emptyFolder">导入文件夹（自动匹配）</button>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap" style="display:none">
+      <div id="viewerHost"></div>
+      <div class="edit-pop" id="editPop" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="head"><h3>可编辑文字</h3><button class="btn" id="closeSidebar" style="padding:3px 8px">×</button></div>
+    <div class="search"><input id="nodeSearch" placeholder="搜索…"></div>
+    <div class="list" id="nodeList"></div>
+    <div class="foot">点击项可定位并编辑对应文字</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<footer>power by <span class="dot">hoxiudimdim</span> Vbeta1.0.0</footer>
+
+<script>
+"use strict";
+/* =====================================================================
+ * Archify 文字编辑工具（candidate.json 数据源版）
+ * 数据模型 = archify IR（candidate.json）：
+ *   components[].{id,label,sublabel,tag}  节点
+ *   connections[].{id,label}              连线
+ *   boundaries[].{label}                  区域
+ *   cards[].{title,items}                 卡片
+ * 画布 = 同目录编译产物 HTML（data-node-id / data-edge-id /
+ *        data-composition-frame-id 与 IR 一一对应）
+ * 回写 = 对 candidate.json 字符串做精准替换（保真格式）＋同步 HTML
+ * ===================================================================== */
+
+const $ = id => document.getElementById(id);
+const state = {
+  irRaw: null,        // candidate.json 原始文本
+  ir: null,           // 解析后的对象（工作数据）
+  htmlRaw: null,      // HTML 成品原始文本
+  doc: null,          // HTML 工作 DOM（画布）
+  hasHtml: false,
+  changes: {},        // "objType:id" -> true  标记已修改
+  dirty: false,
+  jsonHandle: null,
+  htmlHandle: null,
+  jsonName: null,
+  htmlName: null,
+  activeEdit: null,   // {type, id}
+};
+
+/* ================= 主题 ================= */
+function isDark(){ return document.documentElement.dataset.theme === "dark"; }
+function applyTheme(){
+  document.documentElement.dataset.theme = isDark() ? "dark" : "light";
+  try{ localStorage.setItem("archify-text-theme", document.documentElement.dataset.theme); }catch(e){}
+  // 若画布已渲染，重绘让颜色跟随主题
+  if($("viewerHost").querySelector("svg[data-canvas]")) renderIROnCanvas();
+}
+// 初始化主题：URL ?theme=dark → localStorage → 系统偏好
+(function(){
+  const url = new URL(location.href);
+  let t = url.searchParams.get("theme");
+  if(t !== "light" && t !== "dark"){ t = null; }
+  if(!t){ try{ t = localStorage.getItem("archify-text-theme") || null; }catch(e){} }
+  if(!t){ t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light"; }
+  document.documentElement.dataset.theme = t;
+})();
+$("themeBtn").onclick = ()=>{ document.documentElement.dataset.theme = isDark() ? "light" : "dark"; applyTheme(); };
+
+/* ================= 文件导入 ================= */
+function readAsText(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsText(file); }); }
+
+$("fileInput").onchange = async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const txt = await readAsText(file);
+  if(/\.json$/i.test(file.name)) loadJson(txt, file.name, null);
+  else loadHtmlOnly(txt, file.name);
+  e.target.value="";
+};
+$("openJsonBtn").onclick = ()=> $("fileInput").click();
+$("emptyJson").onclick = ()=> $("fileInput").click();
+$("emptyFolder").onclick = openFolder;
+$("openFolderBtn").onclick = openFolder;
+
+async function openFolder(){
+  if(!window.showDirectoryPicker){ toast("当前浏览器不支持选文件夹，请改用「导入 JSON 数据」"); return; }
+  try{
+    const handle = await window.showDirectoryPicker({mode:"readwrite"});
+    const jsonE=[], htmlE=[];
+    for await(const entry of handle.values()){
+      if(entry.kind!=="file") continue;
+      if(/\.json$/i.test(entry.name) && /candidate|ir|arch/i.test(entry.name)) jsonE.push(entry);
+      else if(/\.html?$/i.test(entry.name) && !/visual-check/i.test(entry.name)) htmlE.push(entry);
+    }
+    let jsonEntry=null, htmlEntry=null;
+    if(jsonE.length){
+      jsonE.sort((a,b)=>a.name.length-b.name.length);
+      jsonEntry = jsonE[0];
+    }
+    if(htmlE.length){
+      // 优先与 json 同名的 html，否则最大的主图
+      htmlE.sort((a,b)=>b.name.length-a.name.length);
+      htmlEntry = htmlE.find(h=>jsonEntry && h.name.replace(/\.html?$/i,"")===jsonEntry.name.replace(/\.json$/i,"")) || htmlE[0];
+    }
+    const jt = jsonEntry ? await readAsText(await jsonEntry.getFile()) : null;
+    const ht = htmlEntry ? await readAsText(await htmlEntry.getFile()) : null;
+    state.jsonHandle = jsonEntry || null;
+    state.htmlHandle = htmlEntry || null;
+    if(jt) loadJson(jt, jsonEntry.name, ht, htmlEntry?htmlEntry.name:null, htmlEntry||null);
+    else if(ht) loadHtmlOnly(ht, htmlEntry.name, htmlEntry);
+    else toast("文件夹里没找到 candidate.json 或 HTML");
+  }catch(err){ if(err && err.name==="AbortError") return; toast("打开文件夹失败："+err.message); }
+}
+
+function loadJson(text, jsonName, htmlText, htmlName, htmlHandle){
+  let ir; try{ ir = JSON.parse(text); }catch(e){ toast("candidate.json 解析失败："+e.message); return; }
+  if(!ir || !Array.isArray(ir.components)){ toast("JSON 不是 archify IR（缺少 components）"); return; }
+  state.irRaw = text; state.ir = ir; state.jsonName = jsonName;
+  state.changes = {}; state.dirty = false; state.activeEdit = null;
+  closeEdit();
+  // 画布统一用 IR 自绘（可靠、可编辑）；HTML 仅作为「同步回写」的源
+  state.htmlRaw = htmlText || null;
+  state.htmlName = htmlName || null;
+  state.hasHtml = !!htmlText;
+  state.htmlHandle = htmlHandle || null; // 由 openFolder 传入（浏览器写回原 HTML 用）
+  renderIROnCanvas();
+  showLoaded();
+}
+
+function loadHtmlOnly(text, htmlName, handle){
+  // 无 JSON 时降级：用 HTML 反解析生成一个"近似 IR"用于编辑，回写 HTML
+  const ir = irFromHtml(text);
+  if(!ir || !ir.components.length){ toast("HTML 中未找到节点（data-node-id）。可能不是 archify 成品。"); return; }
+  state.ir = ir; state.irRaw = null; state.jsonName = null;
+  state.jsonHandle = null; state.htmlHandle = handle || null;
+  state.htmlRaw = text;
+  state.changes={}; state.dirty=false; state.activeEdit=null; closeEdit();
+  loadHtmlIntoCanvas(text, htmlName);
+  renderIROnCanvas();
+  showLoaded();
+  toast("未找到 candidate.json，已从 HTML 反解析，将回写 HTML 本身");
+}
+
+// 从 HTML 反解析生成 IR（降级路径）
+function irFromHtml(htmlText){
+  const doc = new DOMParser().parseFromString(htmlText,"text/html");
+  const svg = doc.querySelector("svg[data-preset],svg[data-quality-profile]") || [...doc.querySelectorAll("svg")].find(s=>s.querySelector("[data-node-id]"));
+  if(!svg) return null;
+  const ir = { schema_version:1, diagram_type:"architecture", meta:{}, components:[], boundaries:[], connections:[], cards:[] };
+  svg.querySelectorAll("[data-node-id]").forEach(g=>{
+    const tP=g.querySelector('text.t-primary, text[data-node-label=""]');
+    const tC=g.querySelector('text[data-detail="context"]');
+    const tF=g.querySelector('text[data-detail="fine"]');
+    ir.components.push({
+      id:g.getAttribute("data-node-id"),
+      label:tP?tP.textContent:g.getAttribute("data-node-label"),
+      sublabel:tC?tC.textContent:g.getAttribute("data-node-sublabel")||"",
+      tag:tF?tF.textContent:g.getAttribute("data-node-tag")||"",
+    });
+  });
+  return ir;
+}
+
+function loadHtmlIntoCanvas(htmlText, htmlName){
+  // 仅记录 HTML 源用于回写；画布统一用 IR 自绘（可靠、不依赖 archify 运行时样式）
+  state.htmlRaw = htmlText; state.htmlName = htmlName||null; state.hasHtml=true;
+}
+
+function renderIROnCanvas(){
+  const ir = state.ir; const host=$("viewerHost"); host.innerHTML="";
+  const comps = ir.components||[];
+  const bounds = ir.boundaries||[];
+  const conns = ir.connections||[];
+  const dark = isDark();
+  // 画布调色板（亮/暗双套，跟随主题）
+  const P = dark ? {
+    frameFill:"rgba(59,130,246,.08)", frameStroke:"#4b5a72", frameInk:"#8fb3d9",
+    edge:"#55637a", edgeInk:"#9fb0c3",
+    nodeFill:"#1a2433", nodeInk:"#e6edf3", nodeSub:"#9fb0c3", nodeTag:"#76879b",
+    kinds:{backend:"#3b82f6",frontend:"#34d399",database:"#f59e0b",cloud:"#a78bfa",security:"#f87171",messagebus:"#22d3ee",external:"#94a3b8"}
+  } : {
+    frameFill:"rgba(80,120,200,.05)", frameStroke:"#94a3c8", frameInk:"#5b6b8c",
+    edge:"#8a94a6", edgeInk:"#5b6b8c",
+    nodeFill:"#f4f7ff", nodeInk:"#16203a", nodeSub:"#4a5a7a", nodeTag:"#8794ab",
+    kinds:{backend:"#2563eb",frontend:"#059669",database:"#d97706",cloud:"#7c3aed",security:"#b91c1c",messagebus:"#0e7490",external:"#64748b"}
+  };
+  const kindColor=k=>P.kinds[k]||"#94a3b8";
+
+  // 自动布局兜底：无 pos/size 的组件按网格排布（降级路径）
+  let gridIdx=0;
+  const compPos = id => {
+    const c=comps.find(x=>x.id===id); if(!c) return null;
+    if(!c.pos || !c.size){
+      const col=gridIdx%4, row=Math.floor(gridIdx/4);
+      c.pos=[40+col*240, 60+row*140]; c.size=[200,84]; gridIdx++;
+    }
+    return c;
+  };
+  comps.forEach(c=>compPos(c.id));
+
+  // 画布边界：按所有节点坐标计算
+  let maxX=0, maxY=0;
+  comps.forEach(c=>{ const x=c.pos?c.pos[0]:20, w=c.size?c.size[0]:200; maxX=Math.max(maxX,x+w); });
+  comps.forEach(c=>{ const y=c.pos?c.pos[1]:20, h=c.size?c.size[1]:80; maxY=Math.max(maxY,y+h); });
+  maxX=Math.max(maxX,100)+60; maxY=Math.max(maxY,100)+60;
+
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("data-canvas","1");
+  svg.setAttribute("viewBox",`0 0 ${maxX} ${maxY}`);
+  svg.setAttribute("width",maxX); svg.setAttribute("height",maxY);
+  svg.setAttribute("style",`max-width:100%;height:auto;display:block;background:${isDark()?"#151b23":"#fff"};`);
+
+  const posOf = id => { const c=comps.find(x=>x.id===id); if(!c) return null; return {x:c.pos?c.pos[0]:20, y:c.pos?c.pos[1]:20, w:c.size?c.size[0]:200, h:c.size?c.size[1]:80}; };
+
+  // 1) 区域框（虚线，半透明填充）
+  bounds.forEach((b,i)=>{
+    const ids=b.wraps||[];
+    let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    ids.forEach(id=>{ const p=posOf(id); if(p){ x0=Math.min(x0,p.x); y0=Math.min(y0,p.y); x1=Math.max(x1,p.x+p.w); y1=Math.max(y1,p.y+p.h);} });
+    if(!isFinite(x0)) return;
+    x0-=18;y0-=26;x1+=18;y1+=18;
+    const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.setAttribute("data-composition-frame-id", String(i));
+    g.setAttribute("data-composition-frame-label", b.label||"");
+    g.setAttribute("style","cursor:pointer;");
+    g.innerHTML=`
+      <rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" rx="12" fill="${P.frameFill}" stroke="${P.frameStroke}" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="${x0+10}" y="${y0+16}" font-size="12" fill="${P.frameInk}" font-weight="600">${escXml(b.label||"")}</text>`;
+    svg.appendChild(g);
+  });
+
+  // 2) 连线（from→to 折线 + label）
+  conns.forEach(cn=>{
+    const f=posOf(cn.from), t=posOf(cn.to); if(!f||!t) return;
+    const x1=f.x+f.w/2, y1=f.y+f.h, x2=t.x+t.w/2, y2=t.y; // from bottom → to top
+    const midY=(y1+y2)/2;
+    const d=`M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`;
+    const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.setAttribute("data-edge-id", cn.id||"");
+    g.setAttribute("data-edge-label", cn.label||"");
+    g.setAttribute("style","cursor:pointer;");
+    const dashed = cn.variant==="dashed" ? "stroke-dasharray='5 4'" : "";
+    g.innerHTML=`
+      <path d="${d}" fill="none" stroke="${P.edge}" stroke-width="1.5" ${dashed}/>
+      ${cn.label?`<text x="${(x1+x2)/2}" y="${midY-6}" font-size="11" fill="${P.edgeInk}" text-anchor="middle">${escXml(cn.label)}</text>`:""}`;
+    svg.appendChild(g);
+  });
+
+  // 3) 节点
+  comps.forEach(c=>{
+    const x=c.pos?c.pos[0]:20, y=c.pos?c.pos[1]:20, w=c.size?c.size[0]:200, h=c.size?c.size[1]:80;
+    const k=kindColor(c.type||"");
+    const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.setAttribute("data-node-id", c.id);
+    g.setAttribute("style","cursor:pointer;");
+    g.innerHTML=`
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="${P.nodeFill}" stroke="${k}" stroke-width="1.6"/>
+      <rect x="${x}" y="${y}" width="5" height="${h}" rx="2.5" fill="${k}"/>
+      <text x="${x+14}" y="${y+26}" font-size="14" fill="${P.nodeInk}" font-weight="600">${escXml(c.label||"")}</text>
+      ${c.sublabel?`<text x="${x+14}" y="${y+46}" font-size="11" fill="${P.nodeSub}">${escXml(c.sublabel)}</text>`:""}
+      ${c.tag?`<text x="${x+14}" y="${y+h-12}" font-size="9" fill="${P.nodeTag}">${escXml(c.tag)}</text>`:""}`;
+    svg.appendChild(g);
+  });
+
+  host.appendChild(svg);
+  renderCanvas();
+}
+
+function showLoaded(){
+  $("empty").style.display="none";
+  $("canvasWrap").style.display="block";
+  $("statusbar").classList.add("show");
+  const nc = state.ir.components.length, ed = state.ir.connections?state.ir.connections.length:0,
+        bd = state.ir.boundaries?state.ir.boundaries.length:0, cd = state.ir.cards?state.ir.cards.length:0;
+  $("statJson").textContent = state.jsonName || (state.hasHtml? "（从 HTML 反解析）":"—");
+  $("statHtml").textContent = state.htmlName || "—";
+  $("saveJsonBtn").disabled = !state.jsonHandle && !state.jsonName;
+  $("saveHtmlBtn").disabled = !state.hasHtml;
+  updateSidebar(); updateStats();
+  toast(`已载入 ${nc} 节点 / ${ed} 连线 / ${bd} 区域 / ${cd} 卡片`);
+}
+
+/* ================= 画布交互 ================= */
+function renderCanvas(){
+  const svg = $("viewerHost").querySelector("svg");
+  if(!svg) return;
+  // 画布尺寸已在载入时（sizeCloneToFit / fallback）设定；此处不再删 width/height，
+  // 仅保证可交互与不溢出。
+  svg.setAttribute("style",(svg.getAttribute("style")||"")+";max-width:100%;height:auto;cursor:grab;");
+  // 节点点击
+  svg.querySelectorAll("[data-node-id]").forEach(g=>{
+    g.setAttribute("style",(g.getAttribute("style")||"")+";cursor:pointer;");
+    g.addEventListener("click", ev=>{ ev.stopPropagation(); openComponentEdit(g.getAttribute("data-node-id")); });
+  });
+  // 连线点击
+  svg.querySelectorAll("[data-edge-id]").forEach(g=>{
+    g.setAttribute("style",(g.getAttribute("style")||"")+";cursor:pointer;");
+    g.addEventListener("click", ev=>{ ev.stopPropagation(); openConnectionEdit(g.getAttribute("data-edge-id")); });
+  });
+  // 区域点击
+  svg.querySelectorAll("[data-composition-frame-id]").forEach(r=>{
+    r.setAttribute("style",(r.getAttribute("style")||"")+";cursor:pointer;");
+    r.addEventListener("click", ev=>{ ev.stopPropagation(); openBoundaryEdit(parseInt(r.getAttribute("data-composition-frame-id"),10)); });
+  });
+  svg.addEventListener("click", ev=>{ if(ev.target===svg) closeEdit(); });
+}
+
+/* ================= 编辑浮层 ================= */
+const TYPES = {
+  component:   { plural:"components",   fields:[["label","主标题"],["sublabel","副标题"],["tag","细字"]] },
+  connection:  { plural:"connections",  fields:[["label","连线文字"]] },
+  boundary:    { plural:"boundaries",   fields:[["label","区域文字"]] },
+  card:        { plural:"cards",        fields:[["title","卡片标题"]], hasItems:true },
+};
+
+function findObj(type, id){
+  const plural = TYPES[type].plural;
+  const arr = state.ir[plural] || [];
+  if(type==="boundary") return arr[id];   // id 即数组下标
+  return arr.find(o=>o.id===id);
+}
+
+function popPos(){
+  const svg=$("viewerHost").querySelector("svg");
+  const wrap=$("canvasWrap"); const wr=wrap.getBoundingClientRect();
+  if(!svg) return {left:60,top:60};
+  const sr=svg.getBoundingClientRect();
+  return { left: Math.min(Math.max(sr.left-wr.left+20,0), 320), top: Math.min(Math.max(sr.top-wr.top+20,0), 260) };
+}
+
+function openGenericEdit(type, id){
+  const plural=TYPES[type].plural;
+  const obj = findObj(type, id);
+  if(!obj) return;
+  closeEdit(); state.activeEdit={type,id};
+  const pop=$("editPop"); const p=popPos();
+  pop.style.left=p.left+"px"; pop.style.top=p.top+"px"; pop.style.display="block";
+  const meta=TYPES[type];
+  const labelId = type==="component" ? (obj.id||type) : (type==="boundary" ? ("boundary #"+(id+1)) : (obj.id||type));
+  let fieldsHtml = meta.fields.map(([f,lab])=>`
+    <div class="row"><label>${lab}</label><input id="f_${f}" value="${esc(obj[f]??"")}"></div>`).join("");
+  let itemsHtml="";
+  if(meta.hasItems){
+    itemsHtml = `<div class="row"><label>条目 items</label><div class="items-area" id="itemsArea"></div>
+      <button class="btn" id="addItem" style="margin-top:6px;width:100%">+ 添加条目</button></div>`;
+  }
+  pop.innerHTML = `<h4>${typeName(type)}</h4><div><span class="obj-id">${esc(String(labelId))}</span></div>
+    ${fieldsHtml}${itemsHtml}
+    <div class="bar"><button class="btn" id="popCancel">取消</button><button class="btn primary" id="popSave">保存</button></div>`;
+  if(meta.hasItems){
+    const area=$("itemsArea");
+    const renderItems=()=>{
+      area.innerHTML="";
+      (obj.items||[]).forEach((it,i)=>{
+        const r=document.createElement("div"); r.className="it-row";
+        r.innerHTML=`<input value="${esc(it)}" data-i="${i}"><button class="del" data-i="${i}">×</button>`;
+        r.querySelector(".del").onclick=()=>{ obj.items.splice(i,1); renderItems(); };
+        area.appendChild(r);
+      });
+      area.querySelectorAll("input").forEach(inp=>{
+        inp.oninput=()=>{ const k=+inp.getAttribute("data-i"); obj.items[k]=inp.value; markDirty(type,id); };
+      });
+    };
+    renderItems();
+    $("addItem").onclick=()=>{ (obj.items=obj.items||[]).push(""); renderItems(); };
+  }
+  meta.fields.forEach(([f])=>{ const inp=pop.querySelector(`#f_${f}`); if(inp) inp.oninput=()=>{ obj[f]=inp.value; markDirty(type,id); }; });
+  $("popCancel").onclick=()=>closeEdit();
+  $("popSave").onclick=()=>{
+    closeEdit();
+    toast("已更新 "+typeName(type)+" "+String(labelId));
+    // 画布上的对象编辑后重绘画布（组件/连线/区域），让修改立即反映
+    if(type!=="card" && $("viewerHost").querySelector("svg[data-canvas]")) renderIROnCanvas();
+  };
+  const first=pop.querySelector("input"); if(first) first.focus();
+}
+function typeName(t){ return {component:"组件",connection:"连线",boundary:"区域",card:"卡片"}[t]||t; }
+
+function openComponentEdit(id){ openGenericEdit("component", id); }
+function openConnectionEdit(id){ openGenericEdit("connection", id); }
+function openBoundaryEdit(i){ openGenericEdit("boundary", i); }
+function openCardEdit(i){ openGenericEdit("card", i); }
+
+function markDirty(type,id){
+  const key=type+":"+id; state.changes[key]=true; state.dirty=true;
+  updateStats(); updateSidebar();
+}
+
+function closeEdit(){ const p=$("editPop"); if(p) p.style.display="none"; state.activeEdit=null; }
+
+/* ================= 侧栏 ================= */
+function updateSidebar(){
+  const list=$("nodeList"); const q=($("nodeSearch").value||"").trim().toLowerCase();
+  list.innerHTML="";
+  const groups=[["component","组件"],["connection","连线"],["boundary","区域"],["card","卡片"]];
+  groups.forEach(([type,label])=>{
+    const arr=state.ir[ TYPES[type].plural ]||[];
+    if(!arr.length) return;
+    const g=document.createElement("div"); g.className="group-title";
+    g.textContent=`${label} (${arr.length})`;
+    list.appendChild(g);
+    arr.forEach((o,idx)=>{
+      const id = type==="boundary" ? idx : o.id;
+      const nm = o.label || (o.title||"") || String(id);
+      const sub = o.sublabel || o.tag || (type==="card"?(o.items&&o.items.length?o.items.length+" 条":"") : "") || "";
+      if(q && !nm.toLowerCase().includes(q) && !sub.toLowerCase().includes(q)) return;
+      const it=document.createElement("div"); it.className="item";
+      const key=type+":"+id;
+      it.innerHTML=`<span class="nm">${esc(nm)}</span>${sub?`<span class="sub">${esc(sub)}</span>`:""}${state.changes[key]?'<span class="dirty"></span>':''}`;
+      it.onclick=()=>{ openGenericEdit(type, id); focusObj(type,id); };
+      list.appendChild(it);
+    });
+  });
+}
+function focusObj(type,id){
+  const svg=$("viewerHost").querySelector("svg"); if(!svg) return;
+  let sel=null;
+  if(type==="component") sel=`[data-node-id="${CSS.escape(id)}"]`;
+  else if(type==="connection") sel=`[data-edge-id="${CSS.escape(id)}"]`;
+  else if(type==="boundary") sel=`[data-composition-frame-id="${id}"]`;
+  else { // card：滚动到侧栏卡片区（无法精确定位，滚到顶部）
+    const el=svg; if(el) el.scrollIntoView({block:"start"}); return; }
+  const el=svg.querySelector(sel);
+  if(el) el.scrollIntoView({block:"center",behavior:"smooth"});
+}
+$("nodeSearch").oninput=()=>updateSidebar();
+$("closeSidebar").onclick=()=>$("sidebar").classList.remove("open");
+$("toggleSidebar").onclick=()=>$("sidebar").classList.toggle("open");
+
+/* ================= 回写 ================= */
+function updateStats(){ $("statModified").textContent=Object.keys(state.changes).length; $("dirtyFlag").textContent=state.dirty?" · 有未保存修改":""; }
+
+function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+
+function buildJson(){
+  if(state.irRaw) return JSON.stringify(state.ir, null, 2) + (state.irRaw.endsWith("\n")?"\n":"");
+  return null;
+}
+
+function buildHtml(){
+  if(!state.hasHtml || !state.htmlRaw) return state.htmlRaw;
+  // 用工作 DOM 的修改同步 HTML 字符串：组件 label/sublabel/tag、连线 label、区域 label
+  let html=state.htmlRaw;
+  Object.keys(state.changes).forEach(key=>{
+    const [type,id]=key.split(":");
+    const obj=findObj(type, type==="boundary"?parseInt(id,10):id);
+    if(!obj) return;
+    if(type==="component") html=patchHtmlNode(html, obj.id, obj);
+    else if(type==="connection") html=patchHtmlEdge(html, obj.id, obj.label);
+    else if(type==="boundary") html=patchHtmlBoundary(html, parseInt(id,10), obj.label);
+  });
+  return html;
+}
+
+function patchHtmlNode(html, id, node){
+  const idEsc=escRe(id);
+  const re=new RegExp('<g[^>]*?data-node-id="'+idEsc+'"[^>]*>',"i");
+  const m=re.exec(html); if(!m) return html;
+  const gStart=m.index; const end=findGroupEnd(html, gStart); if(!end) return html;
+  let seg=html.slice(gStart,end);
+  seg=seg.replace(/(\sdata-node-label=")[^"]*(")/i,"$1"+escAttr(node.label)+"$2");
+  seg=seg.replace(/(<text[^>]*?class="[^"]*t-primary[^"]*"[^>]*>)[^<]*(<\/text>)/i,"$1"+escText(node.label)+"$2");
+  if(node.sublabel!==undefined){
+    seg=seg.replace(/(\sdata-node-sublabel=")[^"]*(")/i,"$1"+escAttr(node.sublabel)+"$2");
+    seg=seg.replace(/(<text[^>]*?data-detail="context"[^>]*>)[^<]*(<\/text>)/i,"$1"+escText(node.sublabel)+"$2");
+  }
+  if(node.tag!==undefined){
+    seg=seg.replace(/(\sdata-node-tag=")[^"]*(")/i,"$1"+escAttr(node.tag)+"$2");
+    seg=seg.replace(/(<text[^>]*?data-detail="fine"[^>]*>)[^<]*(<\/text>)/i,"$1"+escText(node.tag)+"$2");
+  }
+  return html.slice(0,gStart)+seg+html.slice(end);
+}
+function patchHtmlEdge(html, id, label){
+  // 连线文字存在 path 的 data-edge-label 属性里（label 在 id 之前）。按 id 定位标签，在标签内替换 label
+  const idEsc=escRe(id);
+  const m=html.match(new RegExp('<[^>]*?data-edge-id="'+idEsc+'"[^>]*>'));
+  if(!m) return html;
+  const tagStart=m.index, tagEnd=m.index+m[0].length;
+  const tag=m[0];
+  if(tag.indexOf("data-edge-label")<0) return html; // 该边无文字
+  const newTag=tag.replace(/(data-edge-label=")[^"]*(")/, "$1"+escAttr(label)+"$2");
+  return html.slice(0,tagStart)+newTag+html.slice(tagEnd);
+}
+function patchHtmlBoundary(html, idx, label){
+  // 区域文字：rect 的 data-composition-frame-label 属性 + <text data-boundary-label> 文本
+  let out=html;
+  const re=new RegExp('(data-composition-frame-id="'+idx+'"[^>]*?data-composition-frame-label=")[^"]*(")');
+  out=out.replace(re, "$1"+escAttr(label)+"$2");
+  // boundary-label 文本无 id 锚点，需匹配与 frame-label 相同值的那一个（该区域紧随的 text）
+  const oldRe=new RegExp('(<text[^>]*?data-boundary-label=""[^>]*>)[^<]*(</text>)');
+  return out.replace(oldRe, "$1"+escText(label)+"$2");
+}
+
+function findGroupEnd(html,start){
+  let i=html.indexOf(">",start)+1, depth=1;
+  while(i<html.length){
+    const lt=html.indexOf("<",i); if(lt<0) return null;
+    const isClose=html[lt+1]==="/";
+    const gt=html.indexOf(">",lt); if(gt<0) return null;
+    const tn=(html.slice(lt+(isClose?2:1),gt).match(/^[a-zA-Z0-9]+/)||[""])[0].toLowerCase();
+    if(tn==="g"){ if(isClose)depth--; else depth++; if(depth===0) return gt+1; }
+    i=gt+1;
+  }
+  return null;
+}
+
+$("saveJsonBtn").onclick=()=>{
+  if(!state.irRaw){ toast("无 candidate.json 源（当前为 HTML 反解析模式）"); return; }
+  const out=buildJson();
+  if(state.jsonHandle){
+    writeToHandle(state.jsonHandle,out).then(()=>{ state.irRaw=out; state.dirty=false; updateStats(); toast("已回写 candidate.json ✓"); })
+      .catch(e=>toast("回写失败："+e.message));
+  } else {
+    download(out, state.jsonName||"candidate.json"); state.irRaw=out; state.dirty=false; updateStats();
+    toast("已下载 candidate.json（浏览器无法覆盖原文件）");
+  }
+};
+$("saveHtmlBtn").onclick=()=>{
+  if(!state.hasHtml){ toast("没有 HTML 画布"); return; }
+  const out=buildHtml();
+  if(state.htmlHandle){
+    writeToHandle(state.htmlHandle,out).then(()=>{ state.htmlRaw=out; toast("已同步回写 HTML ✓"); }).catch(e=>toast("回写失败："+e.message));
+  } else {
+    download(out, state.htmlName||"archify-edited.html"); state.htmlRaw=out; toast("已下载同步后的 HTML");
+  }
+};
+
+async function writeToHandle(handle, content){
+  if(!handle.createWritable) throw new Error("浏览器不支持写回原文件");
+  const w=await handle.createWritable(); await w.write(content); await w.close();
+}
+function download(content,name){
+  const b=new Blob([content],{type:"text/html;charset=utf-8"});
+  const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+
+/* ================= 工具函数 ================= */
+function escAttr(s){ return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+function escText(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function escXml(s){ return esc(s); }
+
+
+let toastTimer;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2400); }
+</script>
+</body>
+</html>

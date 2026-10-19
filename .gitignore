@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+*.swp
+*~
+
+# 本地过程产物（AGENTS.md 文件与目录边界约定：不提交）
+locallog.md
+test/
+research/
+playground/
+dev/**/_shots/
+
+# 前端/构建
+node_modules/
+dist/
+build/
+*.log
+
+# 环境与密钥
+.env
+.env.*
+*.pem
+
+# 编辑器
+.idea/
+.vscode/

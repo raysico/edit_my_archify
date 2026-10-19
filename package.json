@@ -1,0 +1,24 @@
+{
+  "name": "edit_my_archify",
+  "version": "beta1.0.0",
+  "description": "An in-browser text editor for Archify architecture diagrams (candidate.json based). 在 Archify 架构图上直接编辑并回写文字的本地单文件工具。",
+  "license": "MIT",
+  "author": "hoxiudimdim (raysico)",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:raysico/edit_my_archify.git"
+  },
+  "keywords": [
+    "archify",
+    "architecture",
+    "diagram",
+    "editor",
+    "json"
+  ],
+  "files": [
+    "dev/archify-text-editor/Archify文字编辑工具.html"
+  ],
+  "scripts": {},
+  "engines": {}
+}
