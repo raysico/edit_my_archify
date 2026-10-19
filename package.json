@@ -1,6 +1,6 @@
 {
   "name": "edit_my_archify",
-  "version": "beta1.0.0",
+  "version": "beta1.0.1",
   "description": "An in-browser text editor for Archify architecture diagrams (candidate.json based). 在 Archify 架构图上直接编辑并回写文字的本地单文件工具。",
   "license": "MIT",
   "author": "hoxiudimdim (raysico)",

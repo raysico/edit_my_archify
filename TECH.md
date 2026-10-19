@@ -1,6 +1,6 @@
 # Tech
 
-> 项目：`edit_my_archify` · 版本：`beta1.0.0`（版本号以 `package.json` 为准）
+> 项目：`edit_my_archify` · 版本：`beta1.0.1`（版本号以 `package.json` 为准）
 
 ## 1. 架构
 
@@ -33,3 +33,4 @@
 
 - archify 风格双色主题，优先级：URL `?theme=light|dark` → `localStorage "archify-text-theme"` → `prefers-color-scheme`。
 - 画布颜色通过调色板对象（亮 / 暗两套）跟随主题，切换时重绘画布。
+- 输入框与滚动条使用主题 CSS 变量（`--input-bg / --input-border / --scroll-track / --scroll-thumb / --scroll-thumb-hover`），亮 / 暗两套取值随 `html[data-theme]` 切换。

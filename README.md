@@ -3,7 +3,7 @@
 > Edit text directly on your Archify architecture diagram and write it back — as a single local HTML file.
 > 在 Archify 架构图上直接修改文字并回写：一个单文件本地 HTML 工具。
 
-**Version / 版本**：`beta1.0.0`（唯一真源 `package.json`）
+**Version / 版本**：`beta1.0.1`（唯一真源 `package.json`）
 **License / 协议**：MIT
 **Author / 作者**：raysico (hoxiudimdim)
 
@@ -24,7 +24,7 @@ Archify compiles an architecture description into a self-contained interactive H
 - **四类可编辑文字**：组件 `label / sublabel / tag`、连线 `label`、区域 `label`、卡片 `title / items`。
 - **就地编辑**：点击画布对象或侧栏项打开编辑浮层，实时更新画布、侧栏与状态条。
 - **回写保真**：JSON 精准替换（编辑单个字段 diff 仅 1 行）；HTML 精准标签替换，其它元素零误伤。
-- **双色主题**：archify 风格亮 / 暗主题一键切换，画布配色联动，偏好持久化。
+- **双色主题**：archify 风格亮 / 暗主题一键切换，画布、输入框与滚动条配色联动，偏好持久化。
 - **零依赖单文件**：原生 JS，`file://` 双击即用，无需构建或安装。
 
 ---

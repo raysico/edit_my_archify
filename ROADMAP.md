@@ -1,6 +1,6 @@
 # Roadmap
 
-> 项目：`edit_my_archify` · 版本：`beta1.0.0`（版本号以 `package.json` 为准）
+> 项目：`edit_my_archify` · 版本：`beta1.0.1`（版本号以 `package.json` 为准）
 
 | 里程碑 | 目标 | 预计时间 | 状态 |
 | --- | --- | --- | --- |
